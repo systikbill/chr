@@ -34,7 +34,7 @@ eval $(grep ExecStart /etc/systemd/system/mikrotik-chr.service | cut -d '=' -f 2
 Once logged into the RouterOS terminal, paste the following commands to configure your network and SSTP VPN Server:
 
 ```routeros
-# 1. Assign Internal IP Address
+# 1. Assign Internal IP Address, replace 'etherX' with correct interface name
 /ip address add address=100.64.0.2/24 interface=etherX
 /interface ethernet set etherX arp=proxy-arp
 /ip route add dst-address=0.0.0.0/0 gateway=100.64.0.1
