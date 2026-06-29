@@ -24,6 +24,7 @@ if [ "$OPTION" = "2" ]; then
     iptables -t nat -D PREROUTING -p tcp --dport 4443 -j DNAT --to-destination 100.64.0.2:443 2>/dev/null || true
     iptables -t nat -D PREROUTING -p tcp --dport 7001 -j DNAT --to-destination 100.64.0.2:8291 2>/dev/null || true
     iptables -t nat -D PREROUTING -p tcp --dport 7002 -j DNAT --to-destination 100.64.0.2:80 2>/dev/null || true
+    ip route del 10.100.0.0/24 via 100.64.0.2 2>/dev/null || true
     netfilter-persistent save || true
 
     echo "Uninstallation complete!"
@@ -104,6 +105,15 @@ iptables -t nat -A POSTROUTING -s 100.64.0.0/24 -j MASQUERADE
 iptables -t nat -A PREROUTING -p tcp --dport 4443 -j DNAT --to-destination 100.64.0.2:443
 iptables -t nat -A PREROUTING -p tcp --dport 7001 -j DNAT --to-destination 100.64.0.2:8291
 iptables -t nat -A PREROUTING -p tcp --dport 7002 -j DNAT --to-destination 100.64.0.2:80
+
+# Allow traffic through the FORWARD chain
+iptables -D FORWARD -i tap0 -j ACCEPT 2>/dev/null || true
+iptables -D FORWARD -o tap0 -j ACCEPT 2>/dev/null || true
+iptables -I FORWARD -i tap0 -j ACCEPT
+iptables -I FORWARD -o tap0 -j ACCEPT
+
+# Add static route to VPN pool immediately
+ip route add 10.100.0.0/24 via 100.64.0.2 2>/dev/null || true
 
 netfilter-persistent save
 

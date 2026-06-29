@@ -31,24 +31,39 @@ eval $(grep ExecStart /etc/systemd/system/mikrotik-chr.service | cut -d '=' -f 2
 *(Wait a few seconds for it to boot. Login as `admin` with a blank password).*
 
 ### Step 2: Apply the Network & VPN Configuration
-Once logged into the RouterOS terminal, paste the following commands to configure your network and SSTP VPN Server:
+Once logged into the RouterOS terminal, apply the necessary configurations based on whether this is a Server or a Client.
 
+#### 1. MUST RUN (Both Client & Server)
 ```routeros
-# 1. Assign Internal IP Address, replace 'etherX' with correct interface name
+# Assign Internal IP Address
 /ip address add address=100.64.0.2/24 interface=etherX
 /interface ethernet set etherX arp=proxy-arp
 /ip route add dst-address=0.0.0.0/0 gateway=100.64.0.1
+```
 
-# 2. Setup SSTP VPN Pool and Profile
+#### 2. SERVER ONLY Commands
+```routeros
+# Setup SSTP VPN Pool and Profile
 /ip pool add name=sstp-pool ranges=10.100.0.10-10.100.0.254
 /ppp profile add name=sstp-profile local-address=10.100.0.1 remote-address=sstp-pool use-encryption=yes dns-server=8.8.8.8,8.8.4.4
 
-# 3. Enable SSTP Server
+# Enable SSTP Server
 /interface sstp-server server set enabled=yes default-profile=sstp-profile port=443 certificate=none authentication=mschap2
 
-# 4. Add a test user
+# Add a test user
 /ppp secret add name=testuser password=testpass profile=sstp-profile service=sstp
+
+# Add NAT masquerade rule
+/ip firewall nat add chain=srcnat dst-address=10.100.0.0/24 action=masquerade
 ```
+
+<!--
+#### 3. CLIENT ONLY Commands
+```routeros
+# Connect to the SSTP Server (Replace SERVER_IP with the actual Server IP)
+/interface sstp-client add connect-to=SERVER_IP disabled=no name=sstp-out1 port=4443 profile=default-encryption user=testuser password=testpass verify-server-certificate=no
+```
+-->
 
 ### Step 3: Exit and Restart the Background Service
 After configuring RouterOS:
